@@ -24,7 +24,7 @@ public class CoreLauncher {
     /**
      * 内核启动程序
      *
-     * @param args 参数
+     * @param args 参数（sandbox.sh脚本中attach_jvm方法设置的参数（w））
      *             [0] : PID
      *             [1] : agent.jar's value
      *             [2] : token
@@ -55,9 +55,10 @@ public class CoreLauncher {
 
         VirtualMachine vmObj = null;
         try {
-
+            //attach 目标pid(w)
             vmObj = VirtualMachine.attach(targetJvmPid);
             if (vmObj != null) {
+                //通过vm类 加载加载sandbox-agent.jar(w)
                 vmObj.loadAgent(agentJarPath, cfg);
             }
 

@@ -216,11 +216,11 @@ check_permission() {
 # reset sandbox work environment
 # reset some options for env
 reset_for_env() {
-
+  #使用默认环境变量 JAVA_HOME(w)
   # use the env JAVA_HOME for default
   [[ -n "${JAVA_HOME}" ]] &&
     SANDBOX_JAVA_HOME="${JAVA_HOME}"
-
+  # 或者通过TARGET_JVM_PID查找 设置sandbox环境变量(w)
   # use the target JVM for SANDBOX_JAVA_HOME
   [[ -z "${SANDBOX_JAVA_HOME}" ]] &&
     SANDBOX_JAVA_HOME="$(
@@ -234,6 +234,7 @@ reset_for_env() {
         sed 's/\/bin\/java//g'
     )"
 
+  #若 ${JAVA_HOME}/lib/tools.jar 存在，则通过 -Xbootclasspath/a 这个配置，将它加入 classpath 末尾，为执行 attach_jvm 方法做准备(w)
   # append toos.jar to JVM_OPT
   [[ -f "${SANDBOX_JAVA_HOME}"/lib/tools.jar ]] &&
     SANDBOX_JVM_OPS="${SANDBOX_JVM_OPS} -Xbootclasspath/a:${SANDBOX_JAVA_HOME}/lib/tools.jar"
@@ -252,6 +253,7 @@ function attach_jvm() {
   token="$(date | head | cksum | sed 's/ //g')"
 
   # attach target jvm
+  # 通过java -jar 命令启动 sandbox-core.jar 并传递参数 1. TARGET_JVM_PID 2. sandbox-agent.jar 3. 启动要用到的数据信息(w)
   "${SANDBOX_JAVA_HOME}/bin/java" \
     ${SANDBOX_JVM_OPS} \
     -jar "${SANDBOX_LIB_DIR}/sandbox-core.jar" \
@@ -342,7 +344,7 @@ function main() {
       ;;
     esac
   done
-
+  #执行sandbox.sh的时候，会先执行reset_for_env方法(w)
   reset_for_env
   check_permission
 
@@ -363,6 +365,7 @@ function main() {
       exit_on_err 1 "server appoint PORT (-P) was missing"
     SANDBOX_SERVER_NETWORK="${TARGET_SERVER_IP};${TARGET_SERVER_PORT}"
   else
+    #然后再执行attach_jvm方法
     # -p was missing
     [[ -z ${TARGET_JVM_PID} ]] &&
       exit_on_err 1 "PID (-p) was missing."

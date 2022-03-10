@@ -85,6 +85,8 @@ public class AgentLauncher {
     /**
      * 启动加载
      *
+     * java agent方式启动(在应用服务启动脚本中添加：java -javaagent:/yourpath/sandbox/lib/sandbox-agent.jar),通过javaagent方式启动会调用AgentLauncher类中的premain方法(w)
+     *
      * @param featureString 启动参数
      *                      [namespace,prop]
      * @param inst          inst
@@ -97,13 +99,19 @@ public class AgentLauncher {
     /**
      * 动态加载
      *
+     * 脚本命令attach_jvm方法设置的参数先传给com.alibaba.jvm.sandbox.core.CoreLauncher#main(java.lang.String[])，
+     * 然后通过CoreLauncher的vmObj.loadAgent传给agentmain（w）
+     *
      * @param featureString 启动参数
      *                      [namespace,token,ip,port,prop]
      * @param inst          inst
      */
     public static void agentmain(String featureString, Instrumentation inst) {
         LAUNCH_MODE = LAUNCH_MODE_ATTACH;
+        //组装通过脚本命令 attach_jvm（）方法传过来的参数featureString(样例：home=/Users/zhengmaoshao/sandbox/bin/..;token=341948577048;server.ip=0.0.0.0;server.port=0;namespace=default)（w）
         final Map<String, String> featureMap = toFeatureMap(featureString);
+        //写了一些数据到/Users/zhengmaoshao/.sandbox.token 这个文件(样例:default;226298528348;0.0.0.0;55060)(w)
+        //首先会调用install方法：在当前JVM安装jvm-sandbox
         writeAttachResult(
                 getNamespace(featureMap),
                 getToken(featureMap),
@@ -239,10 +247,14 @@ public class AgentLauncher {
             // CoreServer类定义
             final Class<?> classOfProxyServer = sandboxClassLoader.loadClass(CLASS_OF_PROXY_CORE_SERVER);
 
+            //获取sandbox-core.jar中的ProxyCoreServer对象实例，注意这里真正被实例化的其实是JettyCoreServer(w)
             // 获取CoreServer单例
             final Object objectOfProxyServer = classOfProxyServer
                     .getMethod("getInstance")
                     .invoke(null);
+
+            //调用JettyCoreServer bind方法开始进入启动httpServer流程(w)
+            //调用JettyCoreServer的isBind()方法判断是否初始化(w)
 
             // CoreServer.isBind()
             final boolean isBind = (Boolean) classOfProxyServer.getMethod("isBind").invoke(objectOfProxyServer);

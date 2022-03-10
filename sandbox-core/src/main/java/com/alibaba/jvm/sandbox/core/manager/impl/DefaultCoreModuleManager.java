@@ -177,7 +177,7 @@ public class DefaultCoreModuleManager implements CoreModuleManager {
 
         // 注入@Resource资源
         injectResourceOnLoadIfNecessary(coreModule);
-
+        //设置生命周期（w）
         callAndFireModuleLifeCycle(coreModule, MODULE_LOAD);
 
         // 设置为已经加载
@@ -577,6 +577,11 @@ public class DefaultCoreModuleManager implements CoreModuleManager {
         }
     }
 
+    /**
+     * 初始化加载所有的模块
+     * @return
+     * @throws ModuleException
+     */
     @Override
     public synchronized CoreModuleManager reset() throws ModuleException {
 
@@ -590,6 +595,7 @@ public class DefaultCoreModuleManager implements CoreModuleManager {
             // 用户模块加载目录，加载用户模块目录下的所有模块
             // 对模块访问权限进行校验
             if (moduleLibDir.exists() && moduleLibDir.canRead()) {
+                //初始化模块目录加载器，传入模块lib目录和加载模式attach 默认加载模式就是attach
                 new ModuleLibLoader(moduleLibDir, cfg.getLaunchMode())
                         .load(
                                 new InnerModuleJarLoadCallback(),
@@ -651,8 +657,11 @@ public class DefaultCoreModuleManager implements CoreModuleManager {
 
         final File systemModuleLibDir = new File(cfg.getSystemModuleLibPath());
         try {
+            //待加载文件集合
             final ArrayList<File> appendJarFiles = new ArrayList<File>();
+            //待卸载模块集合
             final ArrayList<CoreModule> removeCoreModules = new ArrayList<CoreModule>();
+            //待检查文件checksumCRC32集合
             final ArrayList<Long> checksumCRC32s = new ArrayList<Long>();
 
             // 1. 找出所有有变动的文件(add/remove)

@@ -34,6 +34,9 @@
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
+                            <!--agent这个模块也通过maven插件配置了Premain-Class和Agent-Class两个参数，并且都指向AgentLauncher这个类。
+                             如果通过attach pid方式执行，会调用这个类中的agentmain方法。
+                             如果通过javaagent方式启动会调用AgentLauncher类中的premain方法-->
                             <archive>
                                 <manifestEntries>
                                     <Premain-Class>com.alibaba.jvm.sandbox.agent.AgentLauncher</Premain-Class>

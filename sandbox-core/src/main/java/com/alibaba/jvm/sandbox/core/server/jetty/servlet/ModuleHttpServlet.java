@@ -60,6 +60,14 @@ public class ModuleHttpServlet extends HttpServlet {
         doMethod(req, resp, Http.Method.POST);
     }
 
+    /**
+     * http 请求都要通过该方法路由
+     * @param req
+     * @param resp
+     * @param expectHttpMethod
+     * @throws ServletException
+     * @throws IOException
+     */
     private void doMethod(final HttpServletRequest req,
                           final HttpServletResponse resp,
                           final Http.Method expectHttpMethod) throws ServletException, IOException {
@@ -126,6 +134,7 @@ public class ModuleHttpServlet extends HttpServlet {
         final Object[] parameterObjectArray = generateParameterObjectArray(autoCloseResources, method, req, resp);
 
         final boolean isAccessible = method.isAccessible();
+        //使用ModuleJarClassLoader invoke目标模块的方法
         final ClassLoader oriThreadContextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
             method.setAccessible(true);

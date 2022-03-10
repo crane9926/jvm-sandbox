@@ -36,6 +36,8 @@ class ModuleJarLoader {
                                    final ModuleLoadCallback mCb) {
 
         final Set<String> loadedModuleUniqueIds = new LinkedHashSet<String>();
+        //通过ServiceLoader加载工具，从sandbox-mgr-module.jar加载沙箱环境模块接口Module的实现类。
+        //实际就是加载ControlModule，InfoModule，ModuleMgrModule 这三个用于内部操作的类
         final ServiceLoader<Module> moduleServiceLoader = ServiceLoader.load(Module.class, moduleClassLoader);
         final Iterator<Module> moduleIt = moduleServiceLoader.iterator();
         while (moduleIt.hasNext()) {
@@ -117,14 +119,17 @@ class ModuleJarLoader {
         ModuleJarClassLoader moduleJarClassLoader = null;
         logger.info("prepare loading module-jar={};", moduleJarFile);
         try {
+            //创建模块类加载器
             moduleJarClassLoader = new ModuleJarClassLoader(moduleJarFile);
-
+            //将当前线程的类加载器从沙箱类加载器设置成模块类加载器
             final ClassLoader preTCL = Thread.currentThread().getContextClassLoader();
             Thread.currentThread().setContextClassLoader(moduleJarClassLoader);
 
             try {
+                //加载模块
                 hasModuleLoadedSuccessFlag = loadingModules(moduleJarClassLoader, mCb);
             } finally {
+                //将当前线程的类加载器从模块类加载器设置成沙箱类加载器
                 Thread.currentThread().setContextClassLoader(preTCL);
             }
 

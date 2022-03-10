@@ -24,6 +24,7 @@
             </resource>
         </resources>
         <plugins>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -37,6 +38,7 @@
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
+                            <!--通过mainClass 指定了主函数，所以我们通过java -jar sandbox-core.jar命令会执行CoreLauncher类中的main函数(w)-->
                             <archive>
                                 <manifest>
                                     <mainClass>com.alibaba.jvm.sandbox.core.CoreLauncher</mainClass>

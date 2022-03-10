@@ -62,7 +62,9 @@ class ModuleLibLoader {
 
     /**
      * 加载Module
-     *
+     *加载的模块有两种类型：
+     * 1.路径/Users/zhengmaoshao/sandbox/bin/../module 下的系统模块sandbox-mgr-module.jar
+     * 2.路径/Users/zhengmaoshao/.sandbox-module 下的用户自定义模块(w)
      * @param mjCb 模块文件加载回调
      * @param mCb  模块加载回掉
      */

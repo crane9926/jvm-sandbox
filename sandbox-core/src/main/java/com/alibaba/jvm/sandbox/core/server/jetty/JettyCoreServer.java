@@ -180,14 +180,19 @@ public class JettyCoreServer implements CoreServer {
             initializer.initProcess(new Initializer.Processor() {
                 @Override
                 public void process() throws Throwable {
+                    //初始化logback日志框架
                     LogbackUtils.init(
                             cfg.getNamespace(),
                             cfg.getCfgLibPath() + File.separator + "sandbox-logback.xml"
                     );
                     logger.info("initializing server. cfg={}", cfg);
+                    //创建一个沙箱对象
                     jvmSandbox = new JvmSandbox(cfg, inst);
+                    //初始化Jetty's HttpServer
                     initHttpServer();
+                    //初始化Jetty's ContextHandler
                     initJettyContextHandler();
+                    //启动httpServer
                     httpServer.start();
                 }
             });
@@ -198,7 +203,7 @@ public class JettyCoreServer implements CoreServer {
             } catch (Throwable cause) {
                 logger.warn("reset occur error when initializing.", cause);
             }
-
+            //这里校验httpServer是否启动成功
             final InetSocketAddress local = getLocal();
             logger.info("initialized server. actual bind to {}:{}",
                     local.getHostName(),
