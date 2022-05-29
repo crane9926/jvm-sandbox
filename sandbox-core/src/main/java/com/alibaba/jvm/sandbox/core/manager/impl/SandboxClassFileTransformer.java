@@ -65,6 +65,15 @@ public class SandboxClassFileTransformer implements ClassFileTransformer {
                 : createClassStructure(classBeingRedefined);
     }
 
+    /**
+     * 这个方法主要实现过滤sandbox相关的类和增强符合条件的字节码文件
+     * @param loader
+     * @param internalClassName
+     * @param classBeingRedefined
+     * @param protectionDomain
+     * @param srcByteCodeArray
+     * @return
+     */
     @Override
     public byte[] transform(final ClassLoader loader,
                             final String internalClassName,
@@ -126,6 +135,7 @@ public class SandboxClassFileTransformer implements ClassFileTransformer {
 
         // 开始进行类匹配
         try {
+            // 类增强(jvm-sandbox是如何实现字节码修改的)
             final byte[] toByteCodeArray = new EventEnhancer().toByteCodeArray(
                     loader,
                     srcByteCodeArray,

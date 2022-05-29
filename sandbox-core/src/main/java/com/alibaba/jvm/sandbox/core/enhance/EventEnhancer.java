@@ -86,6 +86,16 @@ public class EventEnhancer implements Enhancer {
         return data;
     }
 
+    /**
+     * jvm-sandbox是如何实现字节码修改的
+     * @param targetClassLoader
+     * @param byteCodeArray
+     * @param signCodes        需要被增强的行为签名
+     * @param namespace        命名空间
+     * @param listenerId       需要埋入的监听器ID
+     * @param eventTypeArray   需要配埋入的事件类型(onBefore\onReturn\onThrow)
+     * @return
+     */
     @Override
     public byte[] toByteCodeArray(final ClassLoader targetClassLoader,
                                   final byte[] byteCodeArray,
@@ -94,11 +104,17 @@ public class EventEnhancer implements Enhancer {
                                   final int listenerId,
                                   final Event.Type[] eventTypeArray) {
         // 返回增强后字节码
+
+        //ClassReader读取字节码数据
         final ClassReader cr = new ClassReader(byteCodeArray);
+        //ClassWriter 继承 ClassVisitor 抽象类，负责将对象化的 class 文件内容重构成一个二进制格式的 class 字节码文件
         final ClassWriter cw = createClassWriter(targetClassLoader, cr);
+        //映射Java对象为对象ID(JVM唯一)
         final int targetClassLoaderObjectID = ObjectIDs.instance.identity(targetClassLoader);
+        //调用ClassReader的accept方法，接收一个实现了抽象类 ClassVisitor的EventWeaver（方法事件编织者）对象实例作为参数，
+        // EventWeaver对象实现了ClassVisitor 的各个visitxxxx方法。
         cr.accept(
-                new EventWeaver(
+                new EventWeaver(//通过EventWeaver把spy编织到目标类（因为EventWeaver中的onMethodEnter，会调用spy的onMethodEnter）
                         ASM7, cw, namespace, listenerId,
                         targetClassLoaderObjectID,
                         cr.getClassName(),
@@ -107,6 +123,7 @@ public class EventEnhancer implements Enhancer {
                 ),
                 EXPAND_FRAMES
         );
+        //最终得到的cw.toByteArray() 即是我们重新transform之后的字节码。
         return dumpClassIfNecessary(cr.getClassName(), cw.toByteArray());
     }
 

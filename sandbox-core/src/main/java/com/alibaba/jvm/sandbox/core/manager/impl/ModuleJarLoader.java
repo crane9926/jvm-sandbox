@@ -87,6 +87,7 @@ class ModuleJarLoader {
 
             try {
                 if (null != mCb) {
+                    //这里进行真正的模块加载
                     mCb.onLoad(uniqueId, classOfModule, module, moduleJarFile, moduleClassLoader);
                 }
             } catch (Throwable cause) {

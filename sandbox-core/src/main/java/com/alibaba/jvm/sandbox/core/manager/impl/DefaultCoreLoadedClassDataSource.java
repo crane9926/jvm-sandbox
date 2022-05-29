@@ -83,7 +83,7 @@ public class DefaultCoreLoadedClassDataSource implements CoreLoadedClassDataSour
             if (null == matcher) {
                 return classes;
             }
-
+            //这个方法中执行了inst.getAllLoadedClasses()这个方法，最终会调用sandbox自己实现的类加载器SandboxClassLoader的loadClass方法。
             final Iterator<Class<?>> itForLoaded = iteratorForLoadedClasses();
             while (itForLoaded.hasNext()) {
                 final Class<?> clazz = itForLoaded.next();

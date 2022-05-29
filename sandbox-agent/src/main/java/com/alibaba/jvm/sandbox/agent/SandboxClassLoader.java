@@ -46,8 +46,17 @@ class SandboxClassLoader extends URLClassLoader {
         return urls;
     }
 
+    /**
+     * 通过重写java.lang.ClassLoader的loadClass(String name, boolean resolve)方法，
+     * 打破了双亲委派约定，达到与目标类隔离的目的，不会引起应用的类污染、冲突
+     * @param name
+     * @param resolve
+     * @return
+     * @throws ClassNotFoundException
+     */
     @Override
     protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        //先走一次已加载类的缓存，如果没有命中，则继续往下 执行加载逻辑
         final Class<?> loadedClass = findLoadedClass(name);
         if (loadedClass != null) {
             return loadedClass;
@@ -59,12 +68,14 @@ class SandboxClassLoader extends URLClassLoader {
 //        }
 
         try {
+            //调用URLClassLoader的findClass方法，从自定义的路径中寻找类
             Class<?> aClass = findClass(name);
             if (resolve) {
                 resolveClass(aClass);
             }
             return aClass;
         } catch (Exception e) {
+            //没有找到类，就委托AppClassLoader去加载
             return super.loadClass(name, resolve);
         }
     }

@@ -32,7 +32,7 @@ import static com.alibaba.jvm.sandbox.core.manager.impl.DefaultCoreModuleManager
 import static org.apache.commons.lang3.reflect.FieldUtils.writeField;
 
 /**
- * 默认的模块管理实现
+ * 默认的模块管理器实现
  * Created by luanjia on 16/10/4.
  */
 public class DefaultCoreModuleManager implements CoreModuleManager {
@@ -68,6 +68,9 @@ public class DefaultCoreModuleManager implements CoreModuleManager {
         this.providerManager = providerManager;
 
         // 初始化模块目录
+        // （cfg.getSystemModuleLibPath()获取sandbox的系统模块加载路径。
+        //  cfg.getUserModuleLibFilesWithCache()将用户目录下的.sandbox-moulde下的jar包路径记录下来，便于后续的加载。
+        //  我们自己开发的模块jar文件一般就是在用户目录下的.sandbox-moulde）
         this.moduleLibDirArray = mergeFileArray(
                 StringUtils.isBlank(cfg.getSystemModuleLibPath())
                         ? new File[0]
@@ -579,6 +582,8 @@ public class DefaultCoreModuleManager implements CoreModuleManager {
 
     /**
      * 初始化加载所有的模块
+     *
+     * 这部分代码主要做了两件事：强制卸载所有模块和加载所有模块，但是启动时候其实是没有加载模块的，所有这部分逻辑其实是会跳过
      * @return
      * @throws ModuleException
      */
@@ -595,7 +600,7 @@ public class DefaultCoreModuleManager implements CoreModuleManager {
             // 用户模块加载目录，加载用户模块目录下的所有模块
             // 对模块访问权限进行校验
             if (moduleLibDir.exists() && moduleLibDir.canRead()) {
-                //初始化模块目录加载器，传入模块lib目录和加载模式attach 默认加载模式就是attach
+                //初始化模块目录加载器，传入模块lib目录和加载模式，默认加载模式就是attach
                 new ModuleLibLoader(moduleLibDir, cfg.getLaunchMode())
                         .load(
                                 new InnerModuleJarLoadCallback(),

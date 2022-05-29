@@ -37,9 +37,12 @@ public class ModuleJarClassLoader extends RoutingURLClassLoader {
     private final File tempModuleJarFile;
     private final long checksumCRC32;
 
+
     private static File copyToTempFile(final File moduleJarFile) throws IOException {
+        //使用前缀和后缀创建临时文件
         File tempFile = File.createTempFile("sandbox_module_jar_", ".jar");
         tempFile.deleteOnExit();
+        //把原文件的内容复制到临时文件中
         FileUtils.copyFile(moduleJarFile, tempFile);
         return tempFile;
     }
@@ -48,6 +51,13 @@ public class ModuleJarClassLoader extends RoutingURLClassLoader {
         this(moduleJarFile, copyToTempFile(moduleJarFile));
     }
 
+    /**
+     * ModuleClassLoader继承了RoutingURLClassLoader，RoutingURLClassLoader中有一个静态内部Routing类，
+     * 这里传进来的classLoader是SandboxClassLoader，意思是这些指定正则的路径由SandboxClassLoader加载
+     * @param moduleJarFile
+     * @param tempModuleJarFile
+     * @throws IOException
+     */
     private ModuleJarClassLoader(final File moduleJarFile,
                                  final File tempModuleJarFile) throws IOException {
         super(
@@ -59,11 +69,13 @@ public class ModuleJarClassLoader extends RoutingURLClassLoader {
                         "^javax\\.annotation\\.Resource.*$"
                 )
         );
+        //使用CRC32计算文件的校验和
         this.checksumCRC32 = FileUtils.checksumCRC32(moduleJarFile);
         this.moduleJarFile = moduleJarFile;
         this.tempModuleJarFile = tempModuleJarFile;
 
         try {
+            //在重置沙箱时，遇到MgrModule模块无法正确卸载类的情况，主要的原因是在于URLClassLoader.acc.ProtectionDomain[]中包含了上一个ModuleJarClassLoader的引用
             cleanProtectionDomainWhichCameFromModuleJarClassLoader();
             logger.debug("clean ProtectionDomain in {}'s acc success.", this);
         } catch (Throwable e) {

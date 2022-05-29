@@ -43,18 +43,20 @@ public class DefaultProviderManager implements ProviderManager {
     }
 
     private void init(final CoreConfigure cfg) {
+        //从配置中获取Provider的库路径 --> 路径：provider
         final File providerLibDir = new File(cfg.getProviderLibPath());
         if (!providerLibDir.exists()
                 || !providerLibDir.canRead()) {
             logger.warn("loading provider-lib[{}] was failed, doest existed or access denied.", providerLibDir);
             return;
         }
-
+        //从文件系统中依次加载所有provider的jar包
         for (final File providerJarFile : FileUtils.listFiles(providerLibDir, new String[]{"jar"}, false)) {
 
             try {
                 final ProviderClassLoader providerClassLoader = new ProviderClassLoader(providerJarFile, getClass().getClassLoader());
 
+                //加载每个jar包时，会调用方法：com.alibaba.jvm.sandbox.core.manager.impl.DefaultProviderManager#inject
                 // load ModuleJarLoadingChain
                 inject(moduleJarLoadingChains, ModuleJarLoadingChain.class, providerClassLoader, providerJarFile);
 
@@ -72,13 +74,26 @@ public class DefaultProviderManager implements ProviderManager {
 
     }
 
+    /**
+     * 这里使用了ServiceLoader方式，也就是spi加载，加载provider目录下所有实现了ModuleLoadingChain和ModuleJarLoadingChain的类服务.
+     * 后续进行module及jar加载时，会依次调用这些chain来进行相应的处理
+     * @param collection
+     * @param clazz
+     * @param providerClassLoader
+     * @param providerJarFile
+     * @param <T>
+     * @throws IllegalAccessException
+     */
     private <T> void inject(final Collection<T> collection,
                             final Class<T> clazz,
                             final ClassLoader providerClassLoader,
                             final File providerJarFile) throws IllegalAccessException {
+        //spi机制：加载provider目录下所有实现了ModuleLoadingChain和ModuleJarLoadingChain的类服务
         final ServiceLoader<T> serviceLoader = ServiceLoader.load(clazz, providerClassLoader);
         for (final T provider : serviceLoader) {
+            //把provider中添加Resource注解的字段的值 设置为ConfigInfo对象
             injectResource(provider);
+            //把provider添加到集合中，后续进行module及jar加载时，会依次调用这些chain来进行相应的处理
             collection.add(provider);
             logger.info("loading provider[{}] was success from provider-jar[{}], impl={}",
                     clazz.getName(), providerJarFile, provider.getClass().getName());
@@ -86,6 +101,7 @@ public class DefaultProviderManager implements ProviderManager {
     }
 
     private void injectResource(final Object provider) throws IllegalAccessException {
+        //获取provider类及其父类中包含Resource注解的字段
         final Field[] resourceFieldArray = FieldUtils.getFieldsWithAnnotation(provider.getClass(), Resource.class);
         if (ArrayUtils.isEmpty(resourceFieldArray)) {
             return;
@@ -93,8 +109,10 @@ public class DefaultProviderManager implements ProviderManager {
         for (final Field resourceField : resourceFieldArray) {
             final Class<?> fieldType = resourceField.getType();
             // ConfigInfo注入
+            //如果对象的类型为ConfigInfo，则把ConfigInfo注入到该resourceField中
             if (ConfigInfo.class.isAssignableFrom(fieldType)) {
                 final ConfigInfo configInfo = new DefaultConfigInfo(cfg);
+                //强制把provider对象中的resourceField字段的值，设置为configInfo
                 FieldUtils.writeField(resourceField, provider, configInfo, true);
             }
         }

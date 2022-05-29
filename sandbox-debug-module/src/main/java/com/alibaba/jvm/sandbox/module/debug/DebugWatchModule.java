@@ -55,7 +55,7 @@ public class DebugWatchModule extends ParamSupported implements Module {
                 Trigger.BEFORE);
         final Printer printer = new ConcurrentLinkedQueuePrinter(writer);
 
-
+        //这里可以看出通过 HTTP 请求来调用模块的方法增强目标类，最终是调用了 moduleEventWatcher的watch方法。
         final EventWatcher watcher = new EventWatchBuilder(moduleEventWatcher)
                 .onClass(cnPattern)
                 .includeSubClasses()

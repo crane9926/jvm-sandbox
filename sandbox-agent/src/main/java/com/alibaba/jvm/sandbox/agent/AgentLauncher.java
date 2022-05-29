@@ -51,6 +51,7 @@ public class AgentLauncher {
 
 
     // sandbox默认主目录
+    //getProtectionDomain().getCodeSource().getLocation().getFile()表示获取当前jar包的路径
     private static final String DEFAULT_SANDBOX_HOME
             = new File(AgentLauncher.class.getProtectionDomain().getCodeSource().getLocation().getFile())
             .getParentFile()
@@ -211,6 +212,13 @@ public class AgentLauncher {
     /**
      * 在当前JVM安装jvm-sandbox
      *
+     * 主要干了三件事：
+     * 1.将Spy注入到BootstrapClassLoader里，以方便以后通过此类的方法动态绑定到不同的增强类上，
+     * 能够同时在AppClassloader加载的类及sandboxClassLoader加载的类里操作。
+     *
+     * 2.通过sandboxClassLoader加载jvm-sandbox相关核心代码
+     * 3.启动一个jettyserver，用于运行时接收命令来动态增强相应的类
+     *
      * @param featureMap 启动参数配置
      * @param inst       inst
      * @return 服务器IP:PORT
@@ -224,7 +232,7 @@ public class AgentLauncher {
 
         try {
             final String home = getSandboxHome(featureMap);
-            // 将Spy注入到BootstrapClassLoader
+            // 将Spy注入到BootstrapClassLoader(即指定spy的jar包要被BootstrapClassLoader加载)
             inst.appendToBootstrapClassLoaderSearch(new JarFile(new File(
                     getSandboxSpyJarPath(home)
                     // SANDBOX_SPY_JAR_PATH
@@ -253,7 +261,6 @@ public class AgentLauncher {
                     .getMethod("getInstance")
                     .invoke(null);
 
-            //调用JettyCoreServer bind方法开始进入启动httpServer流程(w)
             //调用JettyCoreServer的isBind()方法判断是否初始化(w)
 
             // CoreServer.isBind()
@@ -263,6 +270,7 @@ public class AgentLauncher {
             // 如果未绑定,则需要绑定一个地址
             if (!isBind) {
                 try {
+                    //调用JettyCoreServer bind方法开始进入启动httpServer流程(w)
                     classOfProxyServer
                             .getMethod("bind", classOfConfigure, Instrumentation.class)
                             .invoke(objectOfProxyServer, objectOfCoreConfigure, inst);

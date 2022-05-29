@@ -32,24 +32,29 @@ public class JvmSandbox {
 
     public JvmSandbox(final CoreConfigure cfg,
                       final Instrumentation inst) {
-        //获取事件处理类实例
+        //1获取事件处理类实例
         EventListenerHandler.getSingleton();
         this.cfg = cfg;
-        //初始化模块管理实例
-        //1.通过new DefaultProviderManager(cfg)对默认服务提供管理器实现进行实例化。主要是创建了一个针对服务提供库sandbox-mgr-provider.jar的ClassLoader，sandbox-mgr-provider中的类通过JAVA SPI的方式实现可扩展性(w)
-        //2.初始化模块目录，包括/Users/zhengmaoshao/sandbox/bin/../module文件夹中系统模块和/Users/zhengmaoshao/.sandbox-module文件夹中的用户自定义模块（w）
+        //2初始化模块管理器实例coreModuleManager（DefaultCoreModuleManager就是我们默认的模块管理器）
+           //2.1.通过new DefaultProviderManager(cfg)对默认服务提供管理器实现进行实例化：
+             // 主要是创建了一个针对服务提供库sandbox-mgr-provider.jar的ClassLoader，sandbox-mgr-provider中的类通过JAVA SPI的方式实现可扩展性(w)
+          //2.2.初始化模块目录：
+            // 包括/Users/zhengmaoshao/sandbox/bin/../module文件夹中系统模块和/Users/zhengmaoshao/.sandbox-module文件夹中的用户自定义模块（w）
         this.coreModuleManager = SandboxProtector.instance.protectProxy(CoreModuleManager.class, new DefaultCoreModuleManager(
                 cfg,
                 inst,
                 new DefaultCoreLoadedClassDataSource(inst, cfg.isEnableUnsafe()),
                 new DefaultProviderManager(cfg)
         ));
-        //初始化spy类
+        //3初始化spy类
         init();
     }
 
     private void init() {
         doEarlyLoadSandboxClass();
+        //初始化spy，将单例EventListenerHandler和namespace放入spy类的map中。
+        // 用户实现的listener会存放到单例EventListenerHandler的mappingOfEventProcessor中
+        //字节码增强时asm把spy注入到目标类--等到程序执行到目标方法--进入spy的onEnter--spy调用EventListenerHandler的onEnter方法---EventListenerHandler调用用户自定义的listener方法
         SpyUtils.init(cfg.getNamespace());
     }
 

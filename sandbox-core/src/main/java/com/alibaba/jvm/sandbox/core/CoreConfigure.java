@@ -43,7 +43,7 @@ public class CoreConfigure {
 
     // 用户配置和系统默认配置都可以，需要进行合并的key，例如user_module
     private static final String[] MULTI_KEY_ARRAY = {KEY_USER_MODULE_LIB_PATH};
-
+    //使用指定的KV分割符构造FeatureCodec
     private static final FeatureCodec codec = new FeatureCodec(';', '=');
 
     private final Map<String, String> featureMap = new LinkedHashMap<String, String>();

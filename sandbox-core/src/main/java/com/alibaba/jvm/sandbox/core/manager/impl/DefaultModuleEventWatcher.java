@@ -116,6 +116,7 @@ public class DefaultModuleEventWatcher implements ModuleEventWatcher {
                         );
                     }
                 }
+                //转换 待转换的类(最终会执行SandboxClassFileTransformer的transform方法。)
                 inst.retransformClasses(waitingReTransformClass);
                 logger.info("watch={} in module={} single reTransform {} success, at index={};total={};",
                         watchId, coreModule.getUniqueId(), waitingReTransformClass,
@@ -171,8 +172,11 @@ public class DefaultModuleEventWatcher implements ModuleEventWatcher {
                       final EventListener listener,
                       final Progress progress,
                       final Event.Type... eventType) {
+        //生成watchId,其本质是使用了一个全局的AtomicInteger
         final int watchId = watchIdSequencer.next();
         // 给对应的模块追加ClassFileTransformer
+        //这是 JDK 提供的一个接口ClassFileTransformer，其主要实现了 transform 方法用于修改类的字节码
+        // ，通过这个方法，可以得到虚拟机载入的类的字节码。
         final SandboxClassFileTransformer sandClassFileTransformer = new SandboxClassFileTransformer(
                 watchId, coreModule.getUniqueId(), matcher, listener, isEnableUnsafe, eventType, namespace);
 
@@ -183,6 +187,8 @@ public class DefaultModuleEventWatcher implements ModuleEventWatcher {
         inst.addTransformer(sandClassFileTransformer, true);
 
         // 查找需要渲染的类集合
+        //这里会调用iteratorForLoadedClasses这个方法，这个方法中执行了inst.getAllLoadedClasses()这个方法，
+        // 最终会调用sandbox自己实现的类加载器SandboxClassLoader的loadClass方法。
         final List<Class<?>> waitingReTransformClasses = classDataSource.findForReTransform(matcher);
         logger.info("watch={} in module={} found {} classes for watch(ing).",
                 watchId,
